@@ -6,3 +6,5 @@
 *.fatbin
 /data
 /checkpoints
+/unlabeled2017
+/unlabeled2017.zip
