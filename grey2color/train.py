@@ -46,15 +46,12 @@ image_dir = '../unlabeled2017/unlabeled2017'
 train_dataset = CustomImageDataset(image_dir=image_dir, transform=transform)
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
-# Define grayscale transformation for visualization purposes
 to_grayscale = transforms.Grayscale(num_output_channels=1)
 
-# Define model, loss function, and optimizer
 model = create_model()
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
-# Function to visualize reconstructed images
 def visualize_reconstruction(model, images, epoch):
     model.eval()
     with torch.no_grad():
@@ -85,34 +82,29 @@ def visualize_reconstruction(model, images, epoch):
     plt.show()
 
 # Training Loop
-num_epochs = 10
+num_epochs = 100
 for epoch in range(num_epochs):
     model.train()
     running_loss = 0.0
     with tqdm(total=len(train_loader), desc=f'Epoch {epoch + 1}/{num_epochs}', unit='batch') as pbar:
         for batch_idx, images in enumerate(train_loader):
-            # Convert images to grayscale
-            grayscale_images = to_grayscale(images)
+            try:
+                grayscale_images = to_grayscale(images)
+                optimizer.zero_grad()
+                outputs = model(grayscale_images)
+                loss = criterion(outputs, images)
+                loss.backward()
+                optimizer.step()
+                running_loss += loss.item()
+                if (batch_idx + 1) % 100 == 0:
+                    pbar.set_postfix({'loss': running_loss / 100})
+                    running_loss = 0.0
+                
+                pbar.update(1)
+            except Exception as e:
+                print(f"Error during training at batch {batch_idx}: {e}")
+                break
 
-            # Zero the parameter gradients
-            optimizer.zero_grad()
-
-            # Forward pass
-            outputs = model(grayscale_images)
-            loss = criterion(outputs, images)
-            loss.backward()
-            optimizer.step()
-
-            # Update statistics
-            running_loss += loss.item()
-            if (batch_idx + 1) % 100 == 0:
-                pbar.set_postfix({'loss': running_loss / 100})
-                running_loss = 0.0
-            
-            # Update progress bar
-            pbar.update(1)
-
-    # Visualize reconstruction after each epoch
     visualize_reconstruction(model, images, epoch + 1)
 
 print('Finished Training')
