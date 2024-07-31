@@ -11,12 +11,16 @@ from models import GrayscaleToColorTransformer
 from functools import partial
 from tqdm import tqdm
 
+# Check if CUDA is available
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print("Used Device:", device)
+
 def create_model():
     return GrayscaleToColorTransformer(
         patch_size=16, embed_dim=768, depth=12, num_heads=12,
         decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=16,
         mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6)
-    )
+    ).to(device)
 
 # Define custom dataset
 class CustomImageDataset(Dataset):
@@ -44,7 +48,7 @@ transform = transforms.Compose([
 # Load custom dataset
 image_dir = '../unlabeled2017/unlabeled2017'
 train_dataset = CustomImageDataset(image_dir=image_dir, transform=transform)
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
 
 to_grayscale = transforms.Grayscale(num_output_channels=1)
 
@@ -52,11 +56,15 @@ model = create_model()
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
+# Directory to save model checkpoints
+checkpoint_dir = 'checkpoints'
+os.makedirs(checkpoint_dir, exist_ok=True)
+
 def visualize_reconstruction(model, images, epoch):
     model.eval()
     with torch.no_grad():
-        grayscale_images = to_grayscale(images)
-        outputs = model(grayscale_images)
+        grayscale_images = to_grayscale(images).to(device)
+        outputs = model(grayscale_images).cpu()
     
     fig, axes = plt.subplots(3, 6, figsize=(12, 6))
     for i in range(6):
@@ -68,7 +76,7 @@ def visualize_reconstruction(model, images, epoch):
 
         # Grayscale Image
         ax = axes[1, i]
-        ax.imshow(grayscale_images[i].permute(1, 2, 0).squeeze(), cmap='gray')
+        ax.imshow(grayscale_images[i].permute(1, 2, 0).squeeze().cpu(), cmap='gray')
         ax.axis('off')
         ax.set_title("Grayscale")
 
@@ -89,6 +97,7 @@ for epoch in range(num_epochs):
     with tqdm(total=len(train_loader), desc=f'Epoch {epoch + 1}/{num_epochs}', unit='batch') as pbar:
         for batch_idx, images in enumerate(train_loader):
             try:
+                images = images.to(device)
                 grayscale_images = to_grayscale(images)
                 optimizer.zero_grad()
                 outputs = model(grayscale_images)
@@ -104,7 +113,11 @@ for epoch in range(num_epochs):
             except Exception as e:
                 print(f"Error during training at batch {batch_idx}: {e}")
                 break
-
-    visualize_reconstruction(model, images, epoch + 1)
+    
+    # Save the model checkpoint
+    torch.save(model.state_dict(), os.path.join(checkpoint_dir, f'model_epoch_{epoch + 1}.pth'))
+    
+    # Visualize the reconstruction
+    visualize_reconstruction(model, images.cpu(), epoch + 1)
 
 print('Finished Training')

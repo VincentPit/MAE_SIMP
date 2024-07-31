@@ -5,6 +5,8 @@
 *.cubin
 *.fatbin
 /data
-/checkpoints
+grey2color/checkpoints
 /unlabeled2017
 /unlabeled2017.zip
+/outputs
+/errors
