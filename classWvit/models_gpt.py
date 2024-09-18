@@ -9,7 +9,7 @@ class DecoderOnlyViT(nn.Module):
     """ Decoder-only architecture with Vision Transformer backbone """
     
     def __init__(self, img_size=224, patch_size=16, in_chans=3,
-                 decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=16,
+                 decoder_embed_dim=1024, decoder_depth=8, decoder_num_heads=16,
                  mlp_ratio=4., norm_layer=nn.LayerNorm, norm_pix_loss=False):
         super().__init__()
 
@@ -111,7 +111,7 @@ class DecoderOnlyViT(nn.Module):
         
         return x_masked, mask
 
-    def forward(self, imgs, mask_ratio=0.75):
+    def forward(self, imgs, mask_ratio=0.50):
         # Step 1: Patchify the input image and embed patches
         x = self.patch_embed(imgs)
 
@@ -134,6 +134,7 @@ class DecoderOnlyViT(nn.Module):
 
         # Step 6: Predict the pixels for the masked patches
         x = self.decoder_pred(x)
+        
         x = x[:, 1:, :]  # Remove the class token for the output
-
-        return x, mask
+        x = self.unpatchify(x)
+        return x
