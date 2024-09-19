@@ -84,7 +84,7 @@ class DecoderOnlyViT(nn.Module):
 
     def random_masking(self, x, mask_ratio):
         N, L, D = x.shape
-        len_keep = int(L * (1 - mask_ratio))
+        len_keep = int(L * (mask_ratio))
         
         # Create a mask with the same shape as x
         mask = torch.ones([N, L], device=x.device)

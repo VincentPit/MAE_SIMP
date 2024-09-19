@@ -18,7 +18,7 @@ print("Used Device:", device)
 def create_model():
     return DecoderOnlyViT(
         img_size=224, patch_size=16, in_chans=3,
-        decoder_embed_dim=768, decoder_depth=8, decoder_num_heads=16,
+        decoder_embed_dim=1024, decoder_depth=10, decoder_num_heads=16,
         mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6)
     ).to(device)
 
@@ -60,7 +60,7 @@ def load_latest_checkpoint(model, checkpoint_dir='checkpoints_decoder'):
     model.load_state_dict(torch.load(latest_checkpoint))
     model.eval()
     
-def load_checkpoint(model, checkpoint_dir='checkpoints_decoder', checkpoint_name = "model_epoch_1_mask_50.pth"):
+def load_checkpoint(model, checkpoint_dir='checkpoints_decoder', checkpoint_name = "model_epoch_7_mask_75.pth"):
     checkpoint = checkpoint_dir + '/' + checkpoint_name
     print(f"Loading checkpoint: {checkpoint}")
     model.load_state_dict(torch.load(checkpoint))
@@ -71,16 +71,8 @@ def save_comparison(images, predictions, image_paths, save_dir='results'):
     
     for img, pred, img_path in zip(images, predictions, image_paths):
         # Convert the tensor to numpy
-        img = img.unsqueeze(0)
-        img = model.patchify(img)
-        print("patch Image shape:", img.shape)
-        img = model.unpatchify(img)
-        print("unpatch Image shape:", img.shape)
-        img = img.squeeze(0)
         img = img.permute(1, 2, 0).cpu().numpy()  # (H, W, C)
         
-        pred = pred.unsqueeze(0)
-        pred = model.unpatchify(pred).squeeze(0)  # Unpatchify predicted patches
         pred = pred.permute(1, 2, 0).cpu().numpy()  # (H, W, C)
         
         # Normalize predictions to [0, 1]
@@ -108,7 +100,7 @@ def save_comparison(images, predictions, image_paths, save_dir='results'):
 
 # Model setup
 model = create_model()
-load_latest_checkpoint(model)
+load_checkpoint(model)
 
 # Criterion for loss (if you plan to evaluate loss too)
 criterion = nn.MSELoss()
@@ -120,12 +112,12 @@ with torch.no_grad():
         images = images.to(device)
 
         # Forward pass through the model to get the predictions
-        predictions, mask = model(images, mask_ratio=0.5)  # You can adjust the masking ratio
+        predictions = model(images, mask_ratio=0.25)  # You can adjust the masking ratio
 
         # Convert predicted masked patches into the reconstructed image format
-        reconstructed_images = model.patch_embed(images)
+        #reconstructed_images = model.patchify(images)
         
         # Save comparisons of ground truth and prediction pairs
-        save_comparison(images, reconstructed_images, image_paths)
+        save_comparison(images, predictions, image_paths)
 
 print("Results saved in the 'results' directory.")

@@ -20,7 +20,7 @@ print("Used Device:", device)
 def create_model():
     return DecoderOnlyViT(
         img_size=224, patch_size=16, in_chans=3,
-        decoder_embed_dim=1024, decoder_depth=8, decoder_num_heads=16,
+        decoder_embed_dim=1024, decoder_depth=10, decoder_num_heads=16,
         mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6)
     ).to(device)
 
@@ -55,8 +55,8 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 # Model, loss, optimizer setup
 model = create_model()
 criterion = nn.MSELoss()  # Using MSE Loss as it's a reconstruction task
-optimizer = optim.Adam(model.parameters(), lr=1e-4)
-scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=2, factor=0.5, verbose=True)
+optimizer = optim.Adam(model.parameters(), lr=1e-5)
+scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=2, factor=0.4, verbose=True)
 
 # Directory to save model checkpoints
 checkpoint_dir = 'checkpoints_decoder'
@@ -66,7 +66,7 @@ os.makedirs(checkpoint_dir, exist_ok=True)
 
 # Training Loop
 num_epochs = 100
-masking_rates = [0.50, 0.5, 0.5]  # Different masking rates to be used
+masking_rates = [0.25, 0.25, 0.25]  # Different masking rates to be used
 for epoch in range(num_epochs):
     model.train()
     running_loss = 0.0
