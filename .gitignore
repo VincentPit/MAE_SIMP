@@ -13,3 +13,5 @@ grey2color/checkpoints
 grey2color/checkpoints_downsized
 classWvit/checkpoints_*
 classWvit/checkpoints_GPT
+classWvit/results/
+classWvit/visual_embed/mae_visualize_vit_large.pth
