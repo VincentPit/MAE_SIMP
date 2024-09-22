@@ -100,7 +100,7 @@ def save_comparison(images, predictions, image_paths, save_dir='results'):
 
 # Model setup
 model = create_model()
-load_checkpoint(model)
+load_latest_checkpoint(model)
 
 # Criterion for loss (if you plan to evaluate loss too)
 criterion = nn.MSELoss()
