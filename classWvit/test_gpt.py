@@ -18,7 +18,7 @@ print("Used Device:", device)
 def create_model():
     return DecoderOnlyViT(
         img_size=224, patch_size=16, in_chans=3,
-        decoder_embed_dim=1024, decoder_depth=10, decoder_num_heads=16,
+        decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=8,
         mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6)
     ).to(device)
 
@@ -112,7 +112,7 @@ with torch.no_grad():
         images = images.to(device)
 
         # Forward pass through the model to get the predictions
-        predictions = model(images, mask_ratio=0.25)  # You can adjust the masking ratio
+        predictions = model(images, mask_ratio = 0.10)  # You can adjust the masking ratio
 
         # Convert predicted masked patches into the reconstructed image format
         #reconstructed_images = model.patchify(images)
