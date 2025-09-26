@@ -1,6 +1,7 @@
 import torch
 import subprocess
 
+
 def check_cuda():
     if torch.cuda.is_available():
         print("CUDA is available.")
@@ -15,9 +16,14 @@ def check_cuda():
         try:
             subprocess.run(["nvidia-smi"], check=True)
         except subprocess.CalledProcessError:
-            print("nvidia-smi command failed. Make sure NVIDIA drivers are installed correctly.")
+            print(
+                "nvidia-smi command failed. Make sure NVIDIA drivers are installed correctly."
+            )
         except FileNotFoundError:
-            print("nvidia-smi command not found. Ensure the NVIDIA drivers and CUDA toolkit are installed.")
+            print(
+                "nvidia-smi command not found. Ensure the NVIDIA drivers and CUDA toolkit are installed."
+            )
+
 
 if __name__ == "__main__":
     check_cuda()

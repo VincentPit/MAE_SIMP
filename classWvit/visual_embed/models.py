@@ -18,11 +18,11 @@ from . import models_mae
 
 
 # Load an image
-img_url = 'https://user-images.githubusercontent.com/11435359/147738734-196fd92f-9260-48d5-ba7e-bf103d29364d.jpg'  # fox, from ILSVRC2012_val_00046145
+img_url = "https://user-images.githubusercontent.com/11435359/147738734-196fd92f-9260-48d5-ba7e-bf103d29364d.jpg"  # fox, from ILSVRC2012_val_00046145
 # img_url = 'https://user-images.githubusercontent.com/11435359/147743081-0428eecf-89e5-4e07-8da5-a30fd73cc0ba.jpg'  # cucumber, from ILSVRC2012_val_00047851
 img = Image.open(requests.get(img_url, stream=True).raw)
 img = img.resize((224, 224))
-img = np.array(img) / 255.
+img = np.array(img) / 255.0
 
 assert img.shape == (224, 224, 3)
 
@@ -36,6 +36,7 @@ img = (img - imagenet_mean) / imagenet_std
 # Ensure image data is in the range [0, 1] for visualization
 img_for_display = img * imagenet_std + imagenet_mean
 img_for_display = np.clip(img_for_display, 0, 1)
+
 
 class MAEEncoder(nn.Module):
     def __init__(self, patch_embed, cls_token, pos_embed, blocks, norm):
@@ -57,26 +58,32 @@ class MAEEncoder(nn.Module):
         x = self.norm(x)
         return x
 
-def prepare_model(chkpt_dir='mae_visualize_vit_large.pth', arch='mae_vit_large_patch16', only_encoder=True):
+
+def prepare_model(
+    chkpt_dir="mae_visualize_vit_large.pth",
+    arch="mae_vit_large_patch16",
+    only_encoder=True,
+):
     model = getattr(models_mae, arch)()
-    checkpoint = torch.load(chkpt_dir, map_location='cpu')
-    model.load_state_dict(checkpoint['model'], strict=False)
-    
+    checkpoint = torch.load(chkpt_dir, map_location="cpu")
+    model.load_state_dict(checkpoint["model"], strict=False)
+
     if only_encoder:
         encoder = MAEEncoder(
             model.patch_embed,
             model.cls_token,
             model.pos_embed,
             model.blocks,
-            model.norm
+            model.norm,
         )
         # Freeze parameters
         for param in encoder.parameters():
             param.requires_grad = False
-            
+
         return encoder
-    
+
     return model
+
 
 def download_mae_gan_params():
     url = "https://dl.fbaipublicfiles.com/mae/visualize/mae_visualize_vit_large.pth"
@@ -84,18 +91,23 @@ def download_mae_gan_params():
     with open("mae_visualize_vit_large.pth", "wb") as file:
         file.write(response.content)
 
+
 if __name__ == "__main__":
     # Download model parameters
     download_mae_gan_params()
-    
+
     # Prepare the encoder
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model_mae_gan_encoder = prepare_model('mae_visualize_vit_large.pth', 'mae_vit_large_patch16', only_encoder=True).to(device)
-    
+    model_mae_gan_encoder = prepare_model(
+        "mae_visualize_vit_large.pth", "mae_vit_large_patch16", only_encoder=True
+    ).to(device)
+
     # Convert image to tensor
-    img_tensor = torch.tensor(img).permute(2, 0, 1).unsqueeze(0).to(device, dtype=torch.float32)
-    
+    img_tensor = (
+        torch.tensor(img).permute(2, 0, 1).unsqueeze(0).to(device, dtype=torch.float32)
+    )
+
     # Pass through encoder
     encoded_img = model_mae_gan_encoder(img_tensor)
-    
+
     print(encoded_img.shape)  # Check the output shape

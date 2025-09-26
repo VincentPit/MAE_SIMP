@@ -8,7 +8,7 @@ import numpy as np
 from models_mae import mae_vit_base_patch16, mae_vit_large_patch16
 
 # Set device
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Initialize the MAE model (example: base version)
 model = mae_vit_base_patch16()
@@ -21,16 +21,20 @@ sample_img = torch.randn(1, 3, img_size, img_size).to(device)
 
 # Forward pass through the encoder only (no masking)
 with torch.no_grad():
-    latent, mask, ids_restore = model.forward_encoder(sample_img, mask_ratio=0.0)  # No masking
+    latent, mask, ids_restore = model.forward_encoder(
+        sample_img, mask_ratio=0.0
+    )  # No masking
 
 # Display the shape of the encoder output
 print(f"Latent shape: {latent.shape}")  # Encoder output shape
+
 
 # Visualize the random input image
 def visualize_image(img):
     img = img.permute(1, 2, 0).cpu().numpy()
     plt.imshow(img)
     plt.show()
+
 
 # Visualizing the random sample image
 visualize_image(sample_img[0])
